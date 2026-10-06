@@ -1,0 +1,6 @@
+{
+  "appId": "id.stopwatch.latihan",
+  "appName": "OlgaCounter",
+  "webDir": "www",
+  "server": { "androidScheme": "https" }
+}

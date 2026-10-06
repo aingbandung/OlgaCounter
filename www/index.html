@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>Stopwatch & Latihan</title>
+<script src="native-bridge.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b1220;--card:#131c2e;--line:#22304a;--tx:#e8eefb;--mut:#8b9bb8;--ac:#22c55e;--acd:#16a34a;--warn:#f59e0b;--err:#ef4444;--fill:#1b2740;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f1f5f9;--card:#fff;--line:#dbe3ef;--tx:#0f172a;--mut:#64748b;--fill:#eef2f8}}
+:root[data-theme="light"]{--bg:#f1f5f9;--card:#fff;--line:#dbe3ef;--tx:#0f172a;--mut:#64748b;--fill:#eef2f8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 Inter,system-ui,sans-serif;user-select:none;-webkit-user-select:none}
+.app{max-width:480px;margin:0 auto;padding:16px 16px 28px}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.2px}
+.chip{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 10px;border-radius:99px;background:var(--fill);color:var(--mut);border:1px solid var(--line)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--mut)}
+.chip.on .dot{background:var(--err);animation:p 1.4s infinite}.chip.on{color:var(--tx)}
+@keyframes p{0%{box-shadow:0 0 0 0 rgba(239,68,68,.6)}100%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px}
+.banner{display:flex;gap:12px;align-items:center;border-color:rgba(34,197,94,.45)}
+.banner p{margin:0;color:var(--mut);font-size:12px}.banner b{display:block;font-size:13px}
+.btn{border:0;font:inherit;font-weight:700;cursor:pointer;color:var(--tx)}
+.pri{background:var(--ac);color:#04210f;border-radius:12px;padding:11px 14px;white-space:nowrap}
+.timer{text-align:center;padding:26px 12px 20px}
+.digits{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:clamp(40px,13.5vw,60px);letter-spacing:-1px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.digits small{font-size:.5em;color:var(--ac);font-weight:700}
+.toast{height:22px;font-size:12px;color:var(--ac);font-weight:600;opacity:0;transition:opacity .25s;margin-top:4px}.toast.show{opacity:1}
+.ctrl{display:flex;align-items:center;justify-content:center;gap:28px;margin-top:18px}
+.rb{width:64px;height:64px;border-radius:50%;background:var(--fill);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:700;color:var(--tx)}
+.rb:disabled{opacity:.35}.rb:active:not(:disabled){transform:scale(.94)}
+.rb.big{width:88px;height:88px;background:var(--ac);color:#04210f;border:0;font-size:11px;box-shadow:0 8px 24px rgba(34,197,94,.3)}
+.rb.big.run{background:var(--warn);box-shadow:0 8px 24px rgba(245,158,11,.3)}
+.rb.big svg{width:28px;height:28px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.row+.row,.sec+.sec{margin-top:14px}
+.row .t{display:flex;align-items:center;gap:10px;font-weight:600}
+.row .t span{display:block;font-size:11px;color:var(--mut);font-weight:400}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--fill);display:flex;align-items:center;justify-content:center;color:var(--ac)}
+.sw{position:relative;width:46px;height:28px;flex:none}
+.sw input{position:absolute;inset:0;opacity:0;margin:0;width:100%;height:100%;z-index:2;cursor:pointer}
+.sw i{position:absolute;inset:0;background:var(--line);border-radius:99px;transition:.2s}
+.sw i:after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+.sw input:checked+i{background:var(--ac)}.sw input:checked+i:after{transform:translateX(18px)}
+.lbl{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px}
+.seg{display:flex;background:var(--fill);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;padding:9px 4px;border-radius:9px;background:transparent;font-size:12px;color:var(--mut)}
+.seg button.a{background:var(--card);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.hint{font-size:11px;color:var(--mut)}.hint b{color:var(--tx);font-weight:600}
+input[type=number]{width:100%;margin-top:8px;background:var(--fill);border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--tx);font:inherit;outline:0}
+.sec.hide,.hide{display:none}
+.ghost{background:var(--fill);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:12px;display:flex;gap:8px;align-items:center}
+.mic{background:var(--fill);border-radius:12px;padding:10px 12px;margin-top:12px;font-size:12px}
+.mic div{color:var(--mut);font-size:11px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:13px}
+th{font:600 10px Inter,sans-serif;text-transform:uppercase;color:var(--mut);text-align:left;padding:6px 4px;letter-spacing:.5px}
+td{padding:9px 4px;border-top:1px solid var(--line)}th:last-child,td:last-child{text-align:right}
+td:nth-child(2){color:var(--ac)}.lapbox{max-height:210px;overflow-y:auto}
+details summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--mut);list-style:none}
+#log{margin-top:10px;max-height:110px;overflow-y:auto;font:11px/1.5 'JetBrains Mono',monospace;color:var(--mut)}
+.prog{height:8px;border-radius:99px;background:var(--fill);overflow:hidden;margin-top:12px}.prog i{display:block;height:100%;width:0;background:var(--ac);transition:width .1s linear}.prog.hit i{background:var(--warn)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.two input{margin-top:0}input[type=text]{width:100%;margin-top:8px;background:var(--fill);border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--tx);font:inherit;outline:0}
+.warn{border-color:rgba(245,158,11,.5);color:var(--warn);font-size:12px}
+.tabs{margin-bottom:12px}.tabs button{font-size:13px;font-weight:700}
+.vid{position:relative;aspect-ratio:4/3;background:#000;border-radius:14px;overflow:hidden}
+.vid video,.vid canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vid.mir video,.vid.mir canvas{transform:scaleX(-1)}
+.vph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8b9bb8;font-size:13px;text-align:center;padding:16px}
+.vid.on .vph{display:none}
+.cnt{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:clamp(72px,26vw,112px);line-height:1;font-variant-numeric:tabular-nums}
+.cnt small{font-size:.28em;color:var(--mut);font-weight:700}
+.est{font-weight:700;color:var(--ac);min-height:22px;margin-top:8px}.est.bad{color:var(--warn)}
+#eDbg{font:11px 'JetBrains Mono',monospace;color:var(--mut);margin-top:6px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor"/></symbol>
+<symbol id="pause" viewBox="0 0 24 24"><path d="M7 5v14M17 5v14" stroke-width="3.5"/></symbol>
+<symbol id="flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h12l-2 4 2 4H5"/></symbol>
+<symbol id="reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></symbol>
+<symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+<symbol id="vol" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 8a5 5 0 0 1 0 8"/></symbol>
+<symbol id="flip" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></symbol>
+</defs></svg>
+
+<div class="app">
+<header>
+  <h1 id="h1">OlgaCounter</h1>
+  <div class="chip" id="micChip"><span class="dot"></span><span id="micChipTx">Mic mati</span></div>
+</header>
+
+<div class="seg tabs" id="tabs"><button class="btn a" data-v="sw">Stopwatch</button><button class="btn" data-v="push">Push-up</button><button class="btn" data-v="sit">Sit-up</button></div>
+
+<div id="pgSW">
+
+<div class="card warn hide" id="fileWarn">Dibuka dari File Manager (file://): Chrome Android memblokir mikrofon. Buka lewat alamat https:// agar perintah suara aktif. Timer & suara hitungan tetap berfungsi.</div>
+
+<div class="card banner" id="activate">
+  <svg class="i" style="color:var(--ac);width:28px;height:28px"><use href="#vol"/></svg>
+  <p><b>Aktifkan suara</b>Izinkan audio & mikrofon sekali.</p>
+  <button class="btn pri" onclick="enableAudio()">Aktifkan</button>
+</div>
+
+<section class="card timer">
+  <div class="digits"><span id="h">00</span>:<span id="m">00</span>:<span id="s">00</span><small>.<span id="ms">00</span></small></div>
+  <div class="toast" id="toast"></div>
+  <div class="ctrl">
+    <button class="btn rb" id="bLap" onclick="recordLap()" disabled><svg class="i"><use href="#flag"/></svg>LAP</button>
+    <button class="btn rb big" id="bStart" onclick="toggleTimer()"><svg class="i"><use href="#play"/></svg><span>MULAI</span></button>
+    <button class="btn rb" id="bReset" onclick="resetTimer()" disabled><svg class="i"><use href="#reset"/></svg>RESET</button>
+  </div>
+</section>
+
+<section class="card">
+  <div class="row">
+    <div class="t"><div class="ic"><svg class="i"><use href="#flag"/></svg></div><div>Target Waktu<span id="tInfo">Target nonaktif</span></div></div>
+    <label class="sw"><input type="checkbox" id="tTarget" onchange="readTarget()"><i></i></label>
+  </div>
+  <div class="sec" style="margin-top:14px"><p class="lbl">Durasi target</p>
+    <div class="two"><input type="number" id="tMin" min="0" max="999" value="1" inputmode="numeric" placeholder="Menit" oninput="readTarget()"><input type="number" id="tSec" min="0" max="59" value="0" inputmode="numeric" placeholder="Detik" oninput="readTarget()"></div>
+    <div class="two hint" style="margin-top:4px"><span>Menit</span><span>Detik</span></div></div>
+  <div class="sec"><p class="lbl">Nama target (opsional)</p>
+    <input type="text" id="tName" maxlength="40" placeholder="Kosong = ucapkan durasinya" style="margin-top:0"></div>
+  <div class="prog" id="tProg"><i id="tBar"></i></div>
+</section>
+
+<section class="card hide" id="lapCard">
+  <div class="row" style="margin-bottom:6px"><b>Catatan Lap</b><span class="hint" id="lapCount">0 lap</span></div>
+  <div class="lapbox"><table><thead><tr><th>Lap</th><th>Selisih</th><th>Total</th></tr></thead><tbody id="lapBody"></tbody></table></div>
+</section>
+
+<section class="card">
+  <div class="row">
+    <div class="t"><div class="ic"><svg class="i"><use href="#mic"/></svg></div><div>Perintah Suara<span>mulai · stop · lap · reset</span></div></div>
+    <label class="sw"><input type="checkbox" id="tVoice" checked onchange="toggleVoice()"><i></i></label>
+  </div>
+  <div class="mic"><span id="micTx">Mikrofon belum aktif</span><div>Terakhir: <span id="lastSp">-</span></div></div>
+</section>
+
+<section class="card">
+  <div class="row">
+    <div class="t"><div class="ic"><svg class="i"><use href="#vol"/></svg></div><div>Notifikasi Hitungan<span>Suara saat stopwatch berjalan</span></div></div>
+    <label class="sw"><input type="checkbox" id="tNotify" checked onchange="notifyOn=this.checked"><i></i></label>
+  </div>
+  <div class="sec" style="margin-top:16px"><p class="lbl">Jenis suara</p>
+    <div class="seg" id="segMode"><button class="btn a" data-v="tts">Ucapan</button><button class="btn" data-v="beep">Beep</button></div></div>
+  <div class="sec"><p class="lbl">Interval (detik)</p>
+    <div class="seg" id="segInt"><button class="btn" data-v="1">1</button><button class="btn" data-v="2">2</button><button class="btn a" data-v="5">5</button><button class="btn" data-v="10">10</button><button class="btn" data-v="30">30</button><button class="btn" data-v="c">Lain</button></div>
+    <input type="number" id="custom" class="hide" min="1" max="3600" value="3" inputmode="numeric" placeholder="Detik"></div>
+  <div class="row" style="margin-top:16px">
+    <div class="t" style="font-size:13px"><div>Jeda mic saat bicara<span>Aktifkan hanya jika suara tidak keluar</span></div></div>
+    <label class="sw"><input type="checkbox" id="tPause" onchange="pauseMic=this.checked"><i></i></label>
+  </div>
+  <div class="row" style="margin-top:16px"><button class="btn ghost" onclick="testAudio()"><svg class="i" style="width:16px;height:16px;color:var(--ac)"><use href="#vol"/></svg>Uji Suara</button><span class="hint" id="engine">-</span></div>
+</section>
+
+<section class="card"><details><summary>Diagnostik</summary><div id="log"></div></details></section>
+</div>
+
+<div id="pgEx" class="hide">
+<section class="card" style="padding:10px">
+  <div class="vid" id="vidBox"><video id="ev" playsinline muted></video><canvas id="ec"></canvas><div class="vph">Kamera mati. Tekan MULAI, lalu atur posisi HP.</div></div>
+</section>
+<section class="card timer" style="padding:18px 12px 20px">
+  <p class="lbl" id="eName" style="margin:0">PUSH-UP</p>
+  <div class="cnt"><span id="eN">0</span><small id="eT"></small></div>
+  <div class="est" id="eSt">Tekan MULAI</div>
+  <div class="prog" id="eProg"><i id="eBar"></i></div>
+  <div class="ctrl">
+    <button class="btn rb" id="eFlip"><svg class="i"><use href="#flip"/></svg>FLIP</button>
+    <button class="btn rb big" id="eStart"><svg class="i"><use href="#play"/></svg><span>MULAI</span></button>
+    <button class="btn rb" id="eReset"><svg class="i"><use href="#reset"/></svg>RESET</button>
+  </div>
+  <div id="eDbg"></div>
+</section>
+<section class="card">
+  <div class="sec"><p class="lbl">Target repetisi (0 = tanpa target)</p>
+    <input type="number" id="eTgt" min="0" max="999" value="10" inputmode="numeric" oninput="exUI()" style="margin-top:0"></div>
+  <div class="row" style="margin-top:14px"><div class="t"><div class="ic"><svg class="i"><use href="#vol"/></svg></div><div>Bunyi tiap hitungan<span>Beep saat 1 repetisi selesai</span></div></div>
+    <label class="sw"><input type="checkbox" id="eBeep" checked><i></i></label></div>
+  <div class="row"><div class="t"><div class="ic"><svg class="i"><use href="#mic"/></svg></div><div>Ucapkan angka<span>Suara menyebut hitungan & target</span></div></div>
+    <label class="sw"><input type="checkbox" id="eVoice" checked><i></i></label></div>
+  <div class="row"><div class="t"><div class="ic"><svg class="i"><use href="#mic"/></svg></div><div>Perintah suara<span>mulai · stop · reset</span></div></div>
+    <label class="sw"><input type="checkbox" id="eVc" checked onchange="$('tVoice').checked=this.checked;toggleVoice()"><i></i></label></div>
+  <p class="hint" style="margin:0">Terdengar: <span id="eHeard">-</span></p>
+  <div class="sec"><p class="lbl">Kepekaan hitungan</p>
+    <div class="seg" id="eSens"><button class="btn" data-v="-1">Ketat</button><button class="btn a" data-v="0">Normal</button><button class="btn" data-v="1">Longgar</button></div></div>
+  <p class="hint" id="eTip" style="margin:14px 0 0"></p>
+</section>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let startTime=0,elapsed=0,raf=null,running=false,lastSpoken=-1,interval=5,mode='tts',notifyOn=true,voiceOn=true;
+let laps=[],lastLap=0,audioCtx=null,wakeLock=null;
+const synth=window.speechSynthesis;
+
+function log(msg,t){const d=document.createElement('div');if(t==='error')d.style.color='var(--err)';if(t==='ok')d.style.color='var(--ac)';
+  d.textContent='['+new Date().toLocaleTimeString()+'] '+msg;$('log').appendChild(d);$('log').scrollTop=1e9;}
+
+/* ---------- Audio / TTS ---------- */
+let idVoice=null,curUtter=null,ttsBusy=false;
+function loadVoices(){if(!synth)return;const v=synth.getVoices();
+  idVoice=v.find(x=>x.lang.replace('_','-').toLowerCase()==='id-id')||v.find(x=>x.lang.toLowerCase().startsWith('id'))||null;
+  $('engine').textContent=synth?(idVoice?'Suara: '+idVoice.name:'Suara bawaan HP'):'TTS tidak tersedia';}
+if(synth){loadVoices();synth.onvoiceschanged=loadVoices;}else $('engine').textContent='TTS tidak tersedia';
+
+function ensureCtx(){try{if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){log('AudioContext gagal: '+e.message,'error');}}
+
+function beep(freq=880,dur=.15){try{ensureCtx();const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime;
+  o.frequency.value=freq;g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+dur);}catch(e){log('Beep gagal: '+e.message,'error');}}
+
+let pauseMic=false,ignoreUntil=0,ownText='';
+function speak(text,force){
+  if(!notifyOn&&!force)return;
+  if(mode==='beep'||!synth){beep();return;}
+  ttsBusy=true;ownText=String(text).toLowerCase();ignoreUntil=Date.now()+60000;
+  if(pauseMic)stopRec();
+  try{synth.cancel();synth.resume&&synth.resume();}catch(e){}
+  const u=new SpeechSynthesisUtterance(text);curUtter=u;
+  u.lang='id-ID';if(idVoice)u.voice=idVoice;u.rate=1;u.pitch=1;u.volume=1;
+  let started=false,done=false;
+  const finish=()=>{if(done)return;done=true;ttsBusy=false;ignoreUntil=Date.now()+1500;
+    setTimeout(()=>{if(!ttsBusy&&voiceOn)startRec();},350);};
+  u.onstart=()=>{started=true;setTimeout(finish,9000);};
+  u.onend=finish;
+  u.onerror=e=>{log('TTS error: '+(e.error||'?')+' → beep','error');if(!started)beep();finish();};
+  setTimeout(()=>{try{synth.speak(u);}catch(e){beep();finish();}},80);
+  setTimeout(()=>{if(!started){log('TTS tidak merespons → beep','error');beep();try{synth.cancel();}catch(e){}finish();}},2500);
+}
+
+function enableAudio(){
+  ensureCtx();beep(660,.1);
+  if(synth){try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;synth.speak(u);}catch(e){}}
+  $('activate').classList.add('hide');
+  if(voiceOn)startRec();
+  log('Audio diaktifkan','ok');
+}
+function testAudio(){ensureCtx();log('Uji suara ('+mode+')');speak('Tes suara berhasil',true);}
+
+/* ---------- Voice recognition ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,recActive=false;
+function setMic(on,txt){$('micChip').classList.toggle('on',on);$('micChipTx').textContent=on?'Mendengarkan':'Mic mati';$('micTx').textContent=txt;}
+function initRec(){
+  if(rec||!SR)return;
+  rec=new SR();rec.continuous=true;rec.interimResults=true;rec.lang='id-ID';
+  rec.onstart=()=>{recActive=true;setMic(true,'Mendengarkan perintah…');};
+  rec.onresult=e=>{const r=e.results[e.results.length-1];const tr=r[0].transcript.trim().toLowerCase();
+    $('lastSp').textContent=$('eHeard').textContent='"'+tr+'"';if(r.isFinal)log('Suara: '+tr);voiceCmd(tr);};
+  rec.onerror=e=>{log('Mic error: '+e.error,'error');
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){voiceOn=false;$('tVoice').checked=false;setMic(false,'Izin mikrofon ditolak');}};
+  rec.onend=()=>{recActive=false;
+    if(voiceOn&&!(pauseMic&&ttsBusy))setTimeout(()=>{if(voiceOn&&!(pauseMic&&ttsBusy))startRec();},60);
+    else if(!voiceOn)setMic(false,'Perintah suara nonaktif');};
+}
+function startRec(){if(!SR){setMic(false,'Browser tidak mendukung perintah suara');return;}
+  initRec();if(recActive)return;try{rec.start();}catch(e){}}
+function stopRec(){if(rec&&recActive){try{rec.stop();}catch(e){}}}
+function toggleVoice(){voiceOn=$('tVoice').checked;$('eVc').checked=voiceOn;if(voiceOn)startRec();else stopRec();}
+const CMDS=[['start',/mulai|start|jalan|\bgo\b/g],['stop',/berhenti|stop|jeda|pause/g],['reset',/reset|ulang/g],['lap',/\blap\b|catat/g]];
+const CMDRE=Object.fromEntries(CMDS.map(([n,r])=>[n,new RegExp(r.source)]));
+let lastCmd='',lastCmdT=0;
+const TABCMDS=[['push',/push\s*-?\s*up|pus+h?\s*ap\b|pasap|push\s*ap/g],['sit',/sit\s*-?\s*up|sit\s*ap\b|sitap|sit\s*at\b/g],['sw',/stop\s*watch|stopwatch/g]];
+const TABNAME={push:'Push-up',sit:'Sit-up',sw:'Stopwatch'};
+function tabCmd(c){
+  let best=null,pos=-1;
+  for(const [n,re] of TABCMDS){re.lastIndex=0;let m;while((m=re.exec(c)))if(m.index>pos){pos=m.index;best=n;}}
+  if(!best)return;
+  const cur=exTab?exKind:'sw';if(best===cur)return;
+  if((ttsBusy||Date.now()<ignoreUntil)&&ownText&&new RegExp(TABCMDS.find(t=>t[0]===best)[1].source).test(ownText))return;   // abaikan gema suara app sendiri
+  const b=document.querySelector('#tabs [data-v="'+best+'"]');if(b){b.click();toast('Pindah ke '+TABNAME[best]);log('Perintah suara: pindah ke '+TABNAME[best],'ok');}
+}
+function voiceCmd(c){
+  tabCmd(c);
+  let best=null,pos=-1;
+  for(const [n,re] of CMDS){re.lastIndex=0;let m;while((m=re.exec(c)))if(m.index>pos){pos=m.index;best=n;}}
+  if(!best)return;
+  if((ttsBusy||Date.now()<ignoreUntil)&&CMDRE[best].test(ownText))return;   // abaikan hanya jika itu gema ucapan aplikasi sendiri
+  const now=Date.now();if(best===lastCmd&&now-lastCmdT<1800)return;
+  lastCmd=best;lastCmdT=now;
+  if(exTab){exMsg('Perintah: '+best);if(best==='start'){if(!exRun)exStart();}else if(best==='stop'){if(exRun)exStop();}else if(best==='reset')exReset();return;}
+  toast('Perintah: '+best);
+  if(best==='start'){if(!running)startTimer();}
+  else if(best==='stop'){if(running)pauseTimer();}
+  else if(best==='reset')resetTimer();
+  else if(best==='lap'){if(running)recordLap();}
+}
+
+/* ---------- Stopwatch ---------- */
+function fmt(ms){const p=n=>String(n).padStart(2,'0');
+  return{h:p(Math.floor(ms/36e5)),m:p(Math.floor(ms%36e5/6e4)),s:p(Math.floor(ms%6e4/1e3)),ms:p(Math.floor(ms%1e3/10)),sec:Math.floor(ms/1e3)};}
+function paint(){const t=fmt(elapsed);$('h').textContent=t.h;$('m').textContent=t.m;$('s').textContent=t.s;$('ms').textContent=t.ms;updTarget();return t;}
+function tick(){if(!running)return;elapsed=Date.now()-startTime;const t=paint();if(checkTarget(t))lastSpoken=t.sec;else announce(t);raf=requestAnimationFrame(tick);}
+function setBtn(run){const b=$('bStart');b.classList.toggle('run',run);
+  b.innerHTML='<svg class="i"><use href="#'+(run?'pause':'play')+'"/></svg><span>'+(run?'STOP':'MULAI')+'</span>';}
+function toggleTimer(){running?pauseTimer():startTimer();}
+async function lock(){try{if(navigator.wakeLock)wakeLock=await navigator.wakeLock.request('screen');}catch(e){}}
+function startTimer(){if(running)return;ensureCtx();running=true;startTime=Date.now()-elapsed;
+  lastSpoken=Math.floor(elapsed/1e3);setBtn(true);$('bLap').disabled=false;$('bReset').disabled=false;
+  toast('Dimulai');speak('Mulai');lock();raf=requestAnimationFrame(tick);}
+function pauseTimer(){if(!running)return;running=false;cancelAnimationFrame(raf);
+  if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null;}
+  setBtn(false);toast('Dihentikan');speak('Berhenti');}
+function resetTimer(){const was=running;if(running){running=false;cancelAnimationFrame(raf);setBtn(false);}
+  if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null;}
+  elapsed=0;lastSpoken=-1;lastLap=0;laps=[];targetHit=false;paint();
+  $('bLap').disabled=true;$('bReset').disabled=true;$('lapBody').innerHTML='';$('lapCard').classList.add('hide');
+  toast('Direset');speak('Reset');}
+function recordLap(){if(!elapsed)return;const d=elapsed-lastLap;lastLap=elapsed;
+  laps.unshift({n:laps.length+1,d:fmt(d),t:fmt(elapsed)});
+  $('lapCard').classList.remove('hide');$('lapCount').textContent=laps.length+' lap';
+  $('lapBody').innerHTML=laps.map(l=>'<tr><td>#'+l.n+'</td><td>+'+l.d.m+':'+l.d.s+'.'+l.d.ms+'</td><td>'+l.t.h+':'+l.t.m+':'+l.t.s+'.'+l.t.ms+'</td></tr>').join('');
+  toast('Lap '+laps[0].n+' dicatat');}
+function announce(t){
+  if(exTab||!notifyOn||t.sec===0||t.sec===lastSpoken||t.sec%interval!==0)return;
+  lastSpoken=t.sec;
+  if(mode==='beep'){beep();return;}
+  const h=+t.h,m=+t.m,s=+t.s;
+  speak(h?h+' jam '+m+' menit '+s+' detik':m?m+' menit '+s+' detik':s+' detik');}
+let tt=null;function toast(x){const e=$('toast');e.textContent=x;e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),2000);}
+
+/* ---------- Target ---------- */
+let targetMs=0,targetHit=false;
+function spokenDur(sec){const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
+  return [h?h+' jam':'',m?m+' menit':'',s?s+' detik':''].filter(Boolean).join(' ');}
+function readTarget(){const m=Math.max(0,parseInt($('tMin').value)||0),s=Math.max(0,parseInt($('tSec').value)||0);
+  targetMs=(m*60+s)*1000;targetHit=$('tTarget').checked&&targetMs>0&&elapsed>=targetMs;updTarget();}
+function updTarget(){const on=$('tTarget').checked&&targetMs>0;
+  if(!on){$('tInfo').textContent='Target nonaktif';$('tBar').style.width='0';$('tProg').classList.remove('hit');return;}
+  const rem=Math.max(0,targetMs-elapsed),f=fmt(rem);
+  $('tInfo').textContent=targetHit?'Target tercapai':'Sisa '+(+f.h?f.h+':':'')+f.m+':'+f.s;
+  $('tBar').style.width=Math.min(100,elapsed/targetMs*100)+'%';$('tProg').classList.toggle('hit',targetHit);}
+function checkTarget(t){
+  if(!$('tTarget').checked||targetMs<=0||targetHit||elapsed<targetMs)return false;
+  targetHit=true;updTarget();
+  const name=$('tName').value.trim(),txt='Target '+(name||spokenDur(Math.round(targetMs/1000)))+' tercapai';
+  toast(txt);log(txt,'ok');
+  if(navigator.vibrate)navigator.vibrate([200,100,200]);
+  if(mode==='beep'||!synth){beep(1000,.15);setTimeout(()=>beep(1000,.15),220);setTimeout(()=>beep(1300,.3),440);}
+  else speak(txt,true);
+  return true;}
+
+/* ---------- Settings UI ---------- */
+function seg(id,cb){$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  [...$(id).children].forEach(x=>x.classList.toggle('a',x===b));cb(b.dataset.v);});}
+seg('segMode',v=>{mode=v;log('Jenis suara: '+v);});
+seg('segInt',v=>{if(v==='c'){$('custom').classList.remove('hide');interval=Math.max(1,parseInt($('custom').value)||1);}
+  else{$('custom').classList.add('hide');interval=+v;}log('Interval: '+interval+' dtk');});
+$('custom').addEventListener('input',e=>{interval=Math.max(1,parseInt(e.target.value)||1);});
+
+/* ---------- Init ---------- */
+if(location.protocol==='file:'){$('fileWarn').classList.remove('hide');log('Berjalan di file:// — mikrofon mungkin diblokir','error');}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&running)lock();});
+readTarget();paint();
+
+/* ---------- Tab + Latihan (Push-up / Sit-up), pose via MediaPipe seperti SG.html ---------- */
+var exTab=false,exKind='push',exFacing='user',exRun=false,exLm=null,exStream=null,exLast=-1,exSm=null,exReady=0,exRem=-1,exWl=null,eK=0;
+const ES={push:{n:0,st:'wait',z:'',zn:0,t:0,base:null},sit:{n:0,st:'wait',z:'',zn:0,t:0,base:null}};
+const EXN={push:'PUSH-UP',sit:'SIT-UP'};
+const EXTIP={push:'Taruh HP di lantai dari samping, seluruh badan terlihat (terutama bahu, siku, tangan). Turunkan dada sampai siku sekitar 90°, lalu dorong naik sampai lengan lurus.',
+ sit:'Taruh HP setinggi lantai dari samping; bahu, pinggul, dan lutut harus terlihat. Berbaring dulu, lalu bangun sampai badan menekuk di pinggul, lalu turun lagi.'};
+const EB=[[11,12],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[11,13],[13,15],[12,14],[14,16]];
+const eb=()=>$('eBeep').checked,evo=()=>$('eVoice').checked,eTarget=()=>Math.max(0,parseInt($('eTgt').value)||0);
+const eAng=(a,b,c)=>{const v=[a.x-b.x,a.y-b.y],w=[c.x-b.x,c.y-b.y];return Math.acos(Math.max(-1,Math.min(1,(v[0]*w[0]+v[1]*w[1])/(Math.hypot(...v)*Math.hypot(...w)+1e-9))))*180/Math.PI};
+function exMsg(t,bad){const e=$('eSt');e.textContent=t;e.classList.toggle('bad',!!bad);}
+function exSpeak(t){if(!synth)return;try{ownText=String(t).toLowerCase();ignoreUntil=Date.now()+2500;synth.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='id-ID';if(idVoice)u.voice=idVoice;u.rate=1.15;synth.speak(u);}catch(e){}}
+function exUI(){const s=ES[exKind],t=eTarget();
+  $('eName').textContent=EXN[exKind];$('eN').textContent=s.n;$('eT').textContent=t?' / '+t:'';
+  $('eBar').style.width=t?Math.min(100,s.n/t*100)+'%':'0';$('eProg').classList.toggle('hit',!!t&&s.n>=t);
+  $('eTip').textContent=EXTIP[exKind];
+  const b=$('eStart');b.classList.toggle('run',exRun);b.innerHTML='<svg class="i"><use href="#'+(exRun?'pause':'play')+'"/></svg><span>'+(exRun?'STOP':'MULAI')+'</span>';}
+function showTab(v){
+  if(exRun)exStop();
+  exTab=v!=='sw';if(exTab)exKind=v;
+  $('pgSW').classList.toggle('hide',exTab);$('pgEx').classList.toggle('hide',!exTab);
+  $('h1').textContent=v==='sw'?'OlgaCounter':v==='push'?'Hitung Push-up':'Hitung Sit-up';
+  if(exTab){exMsg('Tekan MULAI');exUI();}}
+seg('tabs',showTab);seg('eSens',v=>{eK=+v;});
+
+function exCount(s){
+  s.n++;s.t=performance.now();const t=eTarget(),hit=t&&s.n===t,m10=s.n%10===0;
+  if(eb()){if(hit)[784,988,1319].forEach((f,i)=>setTimeout(()=>beep(f,.22),i*180));
+    else if(m10){beep(1175,.12);setTimeout(()=>beep(1568,.2),140);}else beep(880,.1);}
+  if(evo())exSpeak(hit?s.n+'. Target tercapai':String(s.n));
+  if(navigator.vibrate)navigator.vibrate(hit?[120,60,120]:35);
+  exUI();}
+
+function exFrame(raw){
+  const v=$('ev'),W=v.videoWidth||640,H=v.videoHeight||480,now=performance.now(),push=exKind==='push',s=ES[exKind];
+  exSm=exSm&&exSm.length===raw.length?raw.map((q,i)=>({x:.6*q.x+.4*exSm[i].x,y:.6*q.y+.4*exSm[i].y,visibility:q.visibility})):raw.map(q=>({x:q.x,y:q.y,visibility:q.visibility}));
+  const p=exSm,P=i=>({x:p[i].x*W,y:p[i].y*H}),vi=i=>p[i].visibility==null?1:p[i].visibility,sum=a=>a.reduce((t,i)=>t+vi(i),0);
+  const A=push?[11,13,15,27]:[11,23,25],B=push?[12,14,16,28]:[12,24,26],J=sum(A)>=sum(B)?A:B,o={p,J:J.slice(0,3),live:false};
+  const ready=now<exReady;
+  if(o.J.some(i=>vi(i)<.5)){s.st='wait';s.z='';if(!ready)exMsg(push?'Bahu, siku & tangan belum terlihat':'Bahu, pinggul & lutut belum terlihat',1);return o;}
+  const a=eAng(P(J[0]),P(J[1]),P(J[2]));
+  if(!push){s.base=Math.min(178,s.base==null?a:Math.max(a,s.base-.05));}   // sudut berbaring = nilai tertinggi yang terlihat
+  $('eDbg').textContent='sudut '+Math.round(a)+'° · '+s.st;
+  if(ready)return o;
+  if(push&&vi(J[3])>=.3){const sh=P(J[0]),an=P(J[3]),tilt=Math.atan2(Math.abs(an.y-sh.y),Math.abs(an.x-sh.x)+1e-6)*180/Math.PI;
+    if(tilt>50){s.st='wait';s.z='';exMsg('Posisi push-up belum terdeteksi',1);return o;}}   // badan harus mendatar
+  let z;
+  if(push){const lo=100+eK*10,hi=152-eK*8;z=a>hi?'hi':a<lo?'lo':'mid';}
+  else{const dr=45-eK*10;z=a>s.base-18?'hi':a<s.base-dr?'lo':'mid';}
+  if(z===s.z)s.zn++;else{s.z=z;s.zn=1;}
+  o.live=true;
+  if(s.zn>=2&&z!=='mid'){
+    if(push){if(z==='hi'){if(s.st==='bottom'&&now-s.t>450)exCount(s);s.st='top';}else if(s.st==='top')s.st='bottom';}
+    else{if(z==='hi')s.st='top';else if(s.st==='top'&&now-s.t>450){exCount(s);s.st='bottom';}}}
+  exMsg(push?(s.st==='top'?'Turun…':s.st==='bottom'?'Dorong naik!':'Luruskan tangan di atas'):(s.st==='top'?'Bangun!':s.st==='bottom'?'Turun pelan-pelan':'Berbaring dulu'));
+  return o;}
+
+function exDraw(g,c,o){
+  const p=o.p,X=i=>p[i].x*c.width,Y=i=>p[i].y*c.height;
+  g.lineWidth=4;g.strokeStyle='rgba(255,255,255,.55)';EB.forEach(([i,j])=>{g.beginPath();g.moveTo(X(i),Y(i));g.lineTo(X(j),Y(j));g.stroke();});
+  g.strokeStyle=g.fillStyle=o.live?'#22c55e':'#f59e0b';g.lineWidth=7;g.beginPath();o.J.forEach((i,k)=>k?g.lineTo(X(i),Y(i)):g.moveTo(X(i),Y(i)));g.stroke();
+  o.J.forEach(i=>{g.beginPath();g.arc(X(i),Y(i),7,0,7);g.fill();});}
+
+function exTickReady(now){
+  const rem=Math.max(0,Math.ceil((exReady-now)/1000));
+  if(rem===exRem)return;const was=exRem;exRem=rem;
+  if(rem>0){exMsg('Bersiap… '+rem);if(rem<=3&&eb())beep(600,.1);}
+  else if(was>0){exMsg('Mulai!');if(eb())beep(1000,.35);if(evo())exSpeak('Mulai');}}
+function exLoop(){
+  if(!exRun)return;const v=$('ev'),c=$('ec'),now=performance.now();exTickReady(now);
+  if(v.readyState>=2&&v.currentTime!==exLast){exLast=v.currentTime;
+    const r=exLm.detectForVideo(v,now);c.width=v.videoWidth;c.height=v.videoHeight;
+    const g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);
+    if(r.landmarks&&r.landmarks[0])exDraw(g,c,exFrame(r.landmarks[0]));
+    else{exSm=null;if(now>=exReady)exMsg('Badan tidak terdeteksi',1);}}
+  requestAnimationFrame(exLoop);}
+async function exLoadMP(){
+  const V=window.PC_VENDOR,CDN='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14',M=['full','lite'];
+  if(V&&V.dir){const d=V.dir,m=await import(d+'/vision_bundle.js');
+    return[m.PoseLandmarker,{wasmLoaderPath:d+'/vision_wasm_internal.js',wasmBinaryPath:d+'/vision_wasm_internal.wasm'},M.map(k=>({modelAssetPath:d+'/pose_landmarker_'+k+'.task'}))];}
+  const m=await import(CDN);
+  return[m.PoseLandmarker,await m.FilesetResolver.forVisionTasks(CDN+'/wasm'),M.map(k=>({modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_'+k+'/float16/latest/pose_landmarker_'+k+'.task'}))];}
+async function exStart(){
+  const b=$('eStart');b.disabled=true;exMsg('Memuat model pose…');
+  try{
+    if(!$('activate').classList.contains('hide'))enableAudio();else{ensureCtx();beep(660,.08);}
+    if(!exLm){const[PL,f,mos]=await exLoadMP();let le;
+      for(const mo of mos){try{exLm=await PL.createFromOptions(f,{baseOptions:mo,runningMode:'VIDEO',numPoses:1,minPoseDetectionConfidence:.4,minPosePresenceConfidence:.4,minTrackingConfidence:.4});break;}catch(e){le=e;}}
+      if(!exLm)throw le;}
+    exStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:exFacing,width:640,height:480},audio:false});
+    const v=$('ev');v.srcObject=exStream;await v.play();
+    Object.assign(ES[exKind],{st:'wait',z:'',zn:0,base:null});
+    exRun=true;exSm=null;exLast=-1;exRem=-1;exReady=performance.now()+5000;
+    $('vidBox').classList.add('on');$('vidBox').classList.toggle('mir',exFacing==='user');
+    try{if(navigator.wakeLock)exWl=await navigator.wakeLock.request('screen');}catch(e){}
+    exLoop();
+  }catch(e){exRun=false;let m;log('Kamera/model gagal: '+(e.message||e.name),'error');
+    if(!window.isSecureContext||!navigator.mediaDevices)m='Kamera diblokir: halaman harus dibuka lewat https:// (file:// atau http:// tidak diizinkan).';
+    else if(e.name==='NotAllowedError')m='Izin kamera ditolak. Izinkan kamera di pengaturan browser untuk situs ini.';
+    else if(e.name==='NotFoundError'||e.name==='NotReadableError')m='Kamera tidak ditemukan atau sedang dipakai aplikasi lain.';
+    else m='Model pose gagal dimuat. Periksa koneksi internet. ('+(e.message||e)+')';
+    alert(m);exMsg('Gagal memulai kamera',1);}
+  b.disabled=false;exUI();}
+function exStop(){
+  exRun=false;if(exStream){exStream.getTracks().forEach(t=>t.stop());exStream=null;}
+  $('ev').srcObject=null;$('vidBox').classList.remove('on');
+  if(exWl){exWl.release().catch(()=>{});exWl=null;}
+  exMsg('Tekan MULAI');exUI();}
+function exReset(){Object.assign(ES[exKind],{n:0,st:'wait',z:'',zn:0,t:0,base:null});if(exRun){exReady=performance.now()+3000;exRem=-1;}exUI();}
+$('eStart').onclick=()=>exRun?exStop():exStart();
+$('eReset').onclick=exReset;
+$('eFlip').onclick=()=>{exFacing=exFacing==='user'?'environment':'user';if(exRun){exStop();exStart();}else $('vidBox').classList.toggle('mir',exFacing==='user');};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&exRun)exStop();});
+exUI();
+setInterval(()=>{if(voiceOn&&$('activate').classList.contains('hide')&&!recActive&&!(pauseMic&&ttsBusy))startRec();},2500);
+</script>
+</body>
+</html>
